@@ -15,7 +15,7 @@ package com.streambox.celldemo;
  * limitations under the License.
  */
 
-import sample.util.SimpleCommandLineParser;
+import com.streambox.celldemo.SimpleCommandLineParser;
 import com.google.gdata.client.spreadsheet.CellQuery;
 import com.google.gdata.client.spreadsheet.FeedURLFactory;
 import com.google.gdata.client.spreadsheet.SpreadsheetService;

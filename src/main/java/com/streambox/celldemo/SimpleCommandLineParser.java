@@ -13,8 +13,10 @@
  * limitations under the License.
  */
 
+package com.streambox.celldemo;
 
-package sample.util;
+
+// package sample.util;
 
 import java.util.HashMap;
 import java.util.Iterator;
