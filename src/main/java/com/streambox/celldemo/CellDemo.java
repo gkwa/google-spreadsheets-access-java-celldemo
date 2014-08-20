@@ -19,6 +19,10 @@ import com.streambox.celldemo.SimpleCommandLineParser;
 import com.google.gdata.client.spreadsheet.CellQuery;
 import com.google.gdata.client.spreadsheet.FeedURLFactory;
 import com.google.gdata.client.spreadsheet.SpreadsheetService;
+import com.google.gdata.client.spreadsheet.ListQuery;
+import com.google.gdata.data.spreadsheet.ListEntry;
+import com.google.gdata.data.spreadsheet.CustomElementCollection;
+import com.google.gdata.data.spreadsheet.ListFeed;
 import com.google.gdata.data.BaseEntry;
 import com.google.gdata.data.Link;
 import com.google.gdata.data.batch.BatchOperationType;
@@ -131,7 +135,6 @@ public class CellDemo {
     }
     int index = -1;
     while (true) {
-      out.print("Enter the number of the spreadsheet to load: ");
       String userInput = reader.readLine();
       try {
         index = Integer.parseInt(userInput);
@@ -144,6 +147,34 @@ public class CellDemo {
       }
     }
     return index - 1;
+  }
+
+  /**
+   * Displays the given list of entries and prompts the user to select the index
+   * of one of the entries. NOTE: The displayed index is 1-based and is
+   * converted to 0-based before being returned.
+   *
+   * @param reader to read input from the keyboard
+   * @param entries the list of entries to display
+   * @param type describes the type of things the list contains
+   * @return the 0-based index of the user's selection
+   * @throws IOException if an I/O error occurs while getting input from user
+   */
+  private int getIndexForSheetWithName(List entries, String type, String sheetName)
+      throws IOException {
+    int index = -1;
+    for (int i = 0; i < entries.size(); i++) {
+      BaseEntry entry = (BaseEntry) entries.get(i);
+//      System.out.println(entry.getTitle().getPlainText());
+      if (sheetName.equals(entry.getTitle().getPlainText())) {
+        index = i;
+        break;
+      }
+    }
+    if(index == -1){
+      throw new NumberFormatException();
+    }
+    return index;
   }
 
   /**
@@ -164,21 +195,49 @@ public class CellDemo {
     SpreadsheetFeed feed = service.getFeed(factory.getSpreadsheetsFeedUrl(),
         SpreadsheetFeed.class);
     List spreadsheets = feed.getEntries();
-    int spreadsheetIndex = getIndexFromUser(reader, spreadsheets,
-        "spreadsheet");
+    String sheetOfInterest = "Untitled spreadsheet";
+//    String sheetOfInterest = "xpath for live/es";
+    int spreadsheetIndex = getIndexForSheetWithName(spreadsheets,
+        "spreadsheet", sheetOfInterest);
     SpreadsheetEntry spreadsheet = feed.getEntries().get(spreadsheetIndex);
 
     // Get the worksheet to load
     if (spreadsheet.getWorksheets().size() == 1) {
       cellFeedUrl = spreadsheet.getWorksheets().get(0).getCellFeedUrl();
+
+
+      String query = "age";
+
+
+      List worksheets = spreadsheet.getWorksheets();
+     // int worksheetIndex = getIndexFromUser(reader, worksheets, "worksheet");
+      int worksheetIndex = 0;
+      WorksheetEntry worksheet = (WorksheetEntry) worksheets
+          .get(worksheetIndex);
+      cellFeedUrl = worksheet.getCellFeedUrl();
+      System.out.println("Sheet loaded.");
+
+      ListQuery listQuery = new ListQuery(worksheet.getListFeedUrl());
+      listQuery.setSpreadsheetQuery(query);
+
+      ListFeed listFeed = service.query(listQuery, ListFeed.class);
+      List<ListEntry> list = listFeed.getEntries();
+      for (ListEntry listEntry : list) {
+        System.out.println("content=[" + listEntry.getPlainTextContent() + "]");
+        CustomElementCollection elements = listEntry.getCustomElements();
+        System.out.println(" name=" + elements.getValue("name") + " age="
+            + elements.getValue("age"));
+      }
+
     } else {
       List worksheets = spreadsheet.getWorksheets();
       int worksheetIndex = getIndexFromUser(reader, worksheets, "worksheet");
       WorksheetEntry worksheet = (WorksheetEntry) worksheets
           .get(worksheetIndex);
       cellFeedUrl = worksheet.getCellFeedUrl();
+      System.out.println("Sheet loaded.");
+
     }
-    System.out.println("Sheet loaded.");
   }
 
   /**
@@ -451,9 +510,6 @@ public class CellDemo {
    */
   public void run(String username, String password)
       throws AuthenticationException {
-    for (String s : WELCOME_MESSAGE) {
-      out.println(s);
-    }
 
     BufferedReader reader = new BufferedReader(
         new InputStreamReader(System.in));
@@ -468,8 +524,6 @@ public class CellDemo {
       e.printStackTrace();
     }
 
-    while (executeCommand(reader)) {
-    }
   }
 
   /**
@@ -494,6 +548,7 @@ public class CellDemo {
         System.out);
 
     demo.run(username, password);
+    System.out.println("done");
   }
 
   /**
